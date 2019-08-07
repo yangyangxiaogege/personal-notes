@@ -716,3 +716,66 @@ services:
       - /usr/local/docker/nexus/data:/nexus-data
 ```
 
+### 1.2.6 Registry(包含了WebUI)
+
+```yml
+
+version: '3.1'
+  
+services:
+  registry:
+    image: registry
+    restart: always
+    container_name: registry
+    ports:
+      - 5000:5000
+    volumes:
+      - /usr/local/docker/registry/data:/var/lib/registry
+
+  frontend:
+    image: konradkleine/docker-registry-frontend:v2
+    ports:
+      - 8080:80
+    volumes:
+      - ./certs/frontend.crt:/etc/apache2/server.crt:ro
+      - ./certs/frontend.key:/etc/apache2/server.key:ro
+    environment:
+      - ENV_DOCKER_REGISTRY_HOST=192.168.78.129
+      - ENV_DOCKER_REGISTRY_PORT=5000
+
+```
+
+
+
+## 1.3 Docker Compose 常用命令
+
+前台运行
+
+```shell
+docker-compose up
+```
+
+后台运行
+
+```shell
+docker-compose up -d
+```
+
+启动
+
+```shell
+docker-compose start
+```
+
+停止
+
+```shell
+docker-compose stop 
+```
+
+停止并移除容器
+
+```shell
+docker-compose down
+```
+
