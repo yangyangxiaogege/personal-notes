@@ -1,0 +1,168 @@
+﻿Mysql操作
+1.创建数据库
+CREATA DATABASE 数据库名称;
+
+2.调用数据库
+use 数据库名;
+
+3.创建表
+CREATA TABALE 表名（
+列名 数据类型，
+列名数据类型
+）;
+3-1、修改表名
+EXEC sp_rename'原表名','新表名';
+4.添加列
+alter table 表名 add 列名 数据类型;
+
+5.修改列
+方法一：
+alter table 表名 modify 列名 数据类型;   注意：此方法在Mysql中可以使用，sql server中不能使用此方法
+方法二：
+1、该列非主键、无default约束
+直接更新：
+alter table 表名 alter column 列名 数据类型
+2、该列为主键列、无default约束
+(1)删除主键
+alter table 表名 drop constraint 主键名称
+(2)更新数据类型
+alter table 表名 alter column 列名 数据类型 not null
+(3)添加主键
+alter table 表名 add constraint 主键名称 primary key (主键字段1,主键字段2)
+3、该列为主键列，有default约束
+(1)删除主键
+alter table 表名 drop constraint 主键名称
+---->补充：
+select a.name as 表名,b.Xtype as 键类型,b.Name as 键名
+from sysobjects a,sysobjects b 
+where a.ID=b.parent_obj and a.name='你要查的表名'
+and b.Xtype in('F','PK')
+<-----
+(2)解除default约束
+USE 数据库名
+IF EXISTS (SELECT name FROM sysobjects
+WHERE name = 'default约束名' 
+AND type = 'D')
+BEGIN 
+EXEC sp_unbindefault '数据表.字段'
+END
+GO
+(3)更新数据类型
+alter table 表名 alter column 列名 数据类型 not null
+(4)添加主键
+alter table 表名 add constraint 主键名称 primary key (主键字段1,主键字段2)
+
+6、删除列
+alter table 表名 drop column 列名;
+
+7、向表中添加数据
+方法一：
+insert into 表名（列名,...）
+value(列值)  注意：值要与列名一一对应
+方法二：
+insert into 表名 (列名)
+select 列值 unino,
+select 列值  
+
+
+8、修改表中数据
+update 表名 set 列名=新的值,...;（修改整列数据）
+update 表名 set 列名=行的值,... where 列名=列值;  (修改列名为某值的数据为。。)
+
+9、删除表中数据
+方法一：
+delete from 表名 where 列名=列值;   (如果没有where，则删除整个表)
+注意：删除的数据可以找回
+方法二：truncate table 表名;(删除整个表的数据，但表仍会存在)--》(执行过程：先删除整个表，在创建一个和原来一样的表)
+ 注意：删除的数据不可找回，执行速度比delete快
+
+ 10、查询库中所有的表
+select name from sysobjects where xtype='u'
+
+11、查询指定表中的列
+select name from syscolumns 
+where id=(select max(id) 
+from sysobjects where xtype='u' and name='表名')
+
+12、添加约束
+12-1：主键约束 primary key;
+一般在该列不经常改动且唯一时添加主键
+方法一：创建表时添加
+create table 表名(列名 数据类型 primary key)
+方法二：创建表时添加，适合添加复合主键
+create table 表名(列名,数据类型,...
+primary key(列名)
+)
+方法三：创建表之后添加
+alter table 表名 add constraint 主键名 primary(列名)
+12-2：唯一约束 unique
+--列添加唯一约束后，该列的值不可重复
+create table 表名 (
+列名 数据类型 unique,
+)
+12-2-1:自动增长列
+创建表时添加：
+-->my sql(auto_increment)
+-->sql server(identity)
+-->oracle(sequence)
+create table 表名(列名 数据类型 identity,...)
+12-3：域完整性  --代表当前单元格
+域完整性约束：
+1、数据类型
+2、非空约束(not null) 
+列名 数据类型 not null
+3、默认值约束(default)
+列名 数据类型 default 默认值 
+4、check约束 mysql不支持
+12-4：引用完整性(参照完整性) 子表引用主表,即子表参照主表 
+1.外键约束
+创建表时添加：
+create table 表名(列名 数据类型,...
+constraint(单词意思：约束) 外键名称 foreing key(主表的主键列名) references 主表名(主键列名)
+给已有的表添加外键约束：
+alter table 表名 add constraint 外键名称 foreing key(主表的主键列名) references 主表名(主键列名)
+)
+
+13、表与表之间的关系
+1.(一对一)
+2.(一对多),(多对一)
+3.(多对多)
+13-1：为什么要拆表
+1.不违反主键约束
+2.避免大量数据的冗余
+
+14、多表查询
+14-1：合并结果集 union,union all
+select * from 表1
+union 或 union all
+select * from 表2
+注：union结果为两个表的并集,union all 将显示两个表的全部数据
+14-2：连接查询
+》=
+注意：select * from 表1,表2;结果会产生迪卡尔集，即表1总行数*表2总行数 条数据
+避免错误的方法，在后边加where条件,一般利用主外键作为条件去除无用信息
+=《
+14-3：内连接查询
+select * from 表1 inner(可省略) join 表2 on 筛选条件
+14-4:外连接查询
+1.左外连接(有时主表也叫左表)
+select * from 表1 left outer join 表2 on 筛选条件(参照左表，如果右表中没有响应的数据，显示空值)
+2.右外连接
+select * from 表1 right outer join 表2 on 筛选条件(参照左表，如果右表中没有响应的数据，显示空值)
+
+15、子查询
+一个select语句中包含另一个select语句
+放在from后可以作为一个表
+放在where后可以作为一个条件
+子查询结果集的形式：
+--》单行单列(用于条件)
+--》单行多列(用于条件)
+需要用到关键字in
+--》多行单列(用于条件)
+--》多行多列(用于表)
+
+16、自连接查询
+即将自身表看成两张表进行查询
+select * from emp as e1,emp as e2 where e1.列名=e2.列名；
+
+
